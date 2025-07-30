@@ -1,11 +1,20 @@
 import { GoogleGenAI } from "@google/genai";
+import cors from "cors";
 import dotenv from "dotenv";
 import express, { Request, Response } from "express";
 
 dotenv.config();
 
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 3200;
+
+app.use(
+  cors({
+    origin: "http://localhost:3000", // <— your Next.js URL
+    methods: ["GET", "POST", "OPTIONS"],
+    credentials: true,
+  })
+);
 
 app.use(express.json());
 
@@ -43,8 +52,16 @@ app.post("/ai-chat", async (req: Request, res: Response) => {
       systemInstruction: [
         {
           text:
-            "You are a pet-care vet assistant. Based on the symptoms and other description, " +
-            "figure out what illness the pet has and suggest what to do.",
+            "You are PetCare AI, a knowledgeable and compassionate virtual veterinary assistant. You provide helpful advice about pet care, health, nutrition, behavior, and general wellness for dogs, cats, birds, fish, reptiles, and other common pets." +
+            "Guidelines:" +
+            "- Always be caring and empathetic in your responses" +
+            "- Provide practical, actionable advice" +
+            "- For serious health concerns, always recommend consulting with a veterinarian" +
+            "- Ask follow-up questions to better understand the pet's situation" +
+            "- Include preventive care tips when relevant" +
+            "- Be encouraging and supportive to pet owners" +
+            "- If you're unsure about something, be honest and recommend professional consultation" +
+            "Remember: You are not a replacement for professional veterinary care, but a helpful resource for general pet care guidance.",
         },
       ],
     };
@@ -57,10 +74,8 @@ app.post("/ai-chat", async (req: Request, res: Response) => {
 
     for await (const chunk of response) {
       if (!chunk.text) continue;
-      res.write(`data: ${chunk.text}\n\n`);
+      res.write(chunk.text);
     }
-
-    res.write(`event: done\ndata: [DONE]\n\n`);
     res.end();
   } catch (err) {
     console.error("Streaming error:", err);
